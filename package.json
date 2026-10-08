@@ -1,0 +1,7 @@
+{ "name": "campus-hustle", "private": true,
+  "scripts": {
+    "build": "npm --prefix server install && npm --prefix client install && npm --prefix client run build",
+    "start": "node server/index.js",
+    "seed": "node server/seed.js",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev" } }
