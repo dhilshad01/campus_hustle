@@ -17,7 +17,8 @@ r.get('/', wrap(async (req, res) => {
   if (q.neg === 'true') f.negotiable = true
   if (max !== null && !isNaN(max)) f.price = { ...(f.price || {}), $lte: max }
   if (q.min && !isNaN(Number(q.min))) f.price = { ...(f.price || {}), $gte: Number(q.min) }
-  let items = await Listing.find(f).sort({ low: { price: 1 }, high: { price: -1 } }[q.sort] || { createdAt: -1 }).limit(60).populate('seller', PUBLIC_USER)
+  const sort = q.sort === 'low' ? { price: 1 } : q.sort === 'high' ? { price: -1 } : { createdAt: -1 }
+  let items = await Listing.find(f).sort(sort).limit(60).populate('seller', PUBLIC_USER)
   if (q.seller === 'business' || q.seller === 'student') items = items.filter((l) => l.seller.account === q.seller)
   res.json(items)
 }))
@@ -69,10 +70,16 @@ r.post('/:id/report', wrap(async (req, res) => {
   res.json({ ok: true })
 }))
 
-// Chat: one thread per (listing, buyer). A seller passes ?buyer=<id>.
+// Chat: one thread per (listing, buyer). A seller can only message buyers who have already participated.
 async function thread(req, l) {
-  const isSeller = String(l.seller) === String(req.user._id), buyer = isSeller ? req.query.buyer || req.body.buyer : req.user._id
-  if (!buyer) return null; return { buyer, isSeller }
+  const isSeller = String(l.seller) === String(req.user._id)
+  const buyer = isSeller ? req.query.buyer || req.body.buyer : req.user._id
+  if (!buyer) return null
+  if (isSeller) {
+    const existing = await Message.exists({ listing: l._id, buyer })
+    if (!existing) return null
+  }
+  return { buyer, isSeller }
 }
 r.get('/:id/threads', wrap(async (req, res) => {       // seller: who has messaged me about this listing
   const l = await Listing.findOne({ _id: req.params.id, seller: req.user._id }); if (!l) return res.json([])
