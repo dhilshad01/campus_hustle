@@ -19,7 +19,7 @@ app.post('/api/upload', auth, upload.single('photo'), (req, res) => res.json({ u
 
 app.use('/api/auth', require('./routes/auth')); app.use('/api/listings', require('./routes/listings'))
 app.use('/api/offers', require('./routes/offers')); app.use('/api', require('./routes/community'))
-if (prod) { const dist = path.join(__dirname, '../client/dist'); app.use(express.static(dist)); app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html'))) }
+if (prod) { const dist = path.join(__dirname, '../dist'); app.use(express.static(dist)); app.get('*', (req, res) => res.sendFile(path.join(dist, 'index.html'))) }
 app.use((e, req, res, next) => {
   if (e instanceof ZodError) return res.status(400).json({ error: e.issues[0].path.join('.') + ': ' + e.issues[0].message })
   if (e.name === 'ValidationError' || e.name === 'CastError' || e.message?.startsWith('Photo')) return res.status(400).json({ error: e.message })
